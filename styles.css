@@ -419,29 +419,72 @@ body.day-mode .news-article:hover .news-article-title {
 }
 
 .sidebar-header {
-  padding: 16px 20px;
+  padding: 12px 20px 0;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.sidebar-header-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
 .sidebar-header h2 {
   font-family: 'DM Serif Display', serif;
   font-size: 1.1rem;
   color: var(--text-primary);
-  margin-bottom: 4px;
 }
 
 .sidebar-header .view-info {
   font-size: 0.72rem;
   color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .sidebar-header .view-info .count {
   color: var(--accent-gold);
   font-weight: 700;
+}
+
+/* ── Sidebar Tabs ── */
+.sidebar-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  transition: color var(--transition);
+}
+
+.sidebar-tab:hover {
+  color: var(--text-secondary);
+}
+
+.sidebar-tab.active {
+  color: var(--accent-gold);
+}
+
+.sidebar-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--accent-gold);
+  border-radius: 1px;
 }
 
 .sidebar-body {
@@ -605,6 +648,87 @@ body.day-mode .news-article:hover .news-article-title {
 
 .news-article:last-child {
   border-bottom: none;
+}
+
+/* ── YouTube Video Card ── */
+.video-card {
+  display: block;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+.video-card:hover {
+  background: var(--bg-elevated);
+}
+
+.video-card:last-child {
+  border-bottom: none;
+}
+
+.video-card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 8px;
+  background: var(--bg-elevated);
+}
+
+.video-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.video-card-duration {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.video-card-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.video-card:hover .video-card-title {
+  color: #e05555;
+}
+
+.video-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.video-card-channel {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.video-card-meta .sep::before {
+  content: '\00b7';
 }
 
 /* ── Mobile ── */

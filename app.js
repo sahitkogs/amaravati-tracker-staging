@@ -143,6 +143,73 @@ async function fetchNews(keywords) {
 }
 
 // ══════════════════════════════════════════════════════════
+//  YOUTUBE FETCHING — via Invidious API
+// ══════════════════════════════════════════════════════════
+const videoCache = new Map();
+const videosByLoc = new Map();
+const INVIDIOUS_INSTANCES = [
+  'https://vid.puffyan.us',
+  'https://invidious.fdn.fr',
+  'https://y.com.sb',
+  'https://invidious.perennialte.ch'
+];
+
+async function fetchVideos(keywords) {
+  const cached = videoCache.get(keywords);
+  if (cached && (Date.now() - cached.fetchedAt) < CACHE_TTL) {
+    return cached.videos;
+  }
+
+  // Try each Invidious instance
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const url = `${instance}/api/v1/search?q=${encodeURIComponent(keywords)}&type=video&sort_by=upload_date&region=IN`;
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+
+      const videos = data
+        .filter(item => item.type === 'video')
+        .slice(0, 5)
+        .map(v => ({
+          title: v.title,
+          videoId: v.videoId,
+          link: `https://www.youtube.com/watch?v=${v.videoId}`,
+          channel: v.author || '',
+          thumb: v.videoThumbnails?.find(t => t.quality === 'medium')?.url
+            || v.videoThumbnails?.[0]?.url || '',
+          published: v.published ? new Date(v.published * 1000).toISOString() : '',
+          duration: v.lengthSeconds || 0,
+          views: v.viewCount || 0
+        }));
+
+      videoCache.set(keywords, { videos, fetchedAt: Date.now() });
+      return videos;
+    } catch (e) {
+      continue;
+    }
+  }
+
+  // Fallback: return empty
+  videoCache.set(keywords, { videos: [], fetchedAt: Date.now() });
+  return [];
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return '';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatViews(n) {
+  if (!n) return '';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M views';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K views';
+  return n + ' views';
+}
+
+// ══════════════════════════════════════════════════════════
 //  TIME HELPERS
 // ══════════════════════════════════════════════════════════
 function timeAgo(dateStr) {
@@ -177,14 +244,14 @@ function getTimeGroup(dateStr) {
 const TIME_GROUP_ORDER = ['Today', 'Yesterday', 'This Week', 'Last Week', 'This Month', 'Older'];
 
 // ══════════════════════════════════════════════════════════
-//  SIDEBAR — unified chronological news feed
+//  SIDEBAR — tabbed feed (Articles / YouTube)
 // ══════════════════════════════════════════════════════════
 const sidebarBody = document.getElementById('sidebarBody');
 const visibleCountEl = document.getElementById('visibleCount');
 let activeFilter = 'all';
+let activeTab = 'articles';
 let renderGeneration = 0;
-let lastVisibleIds = ''; // track visible set to skip redundant renders
-// Collected articles keyed by location id — persists across renders
+let lastVisibleIds = '';
 const articlesByLoc = new Map();
 
 function getVisibleLocations() {
@@ -195,6 +262,7 @@ function getVisibleLocations() {
   });
 }
 
+// ── Article rendering ──
 function renderArticleHtml(article) {
   const catColor = CATEGORY_COLORS[article._loc.category];
   const thumbHtml = article.thumb
@@ -219,15 +287,13 @@ function renderArticleHtml(article) {
   `;
 }
 
-function buildFeedHtml(visibleIds) {
-  // Collect all articles for currently visible locations
+function buildArticlesFeedHtml(visibleIds) {
   const allArticles = [];
   visibleIds.forEach(id => {
     const arts = articlesByLoc.get(id);
     if (arts) allArticles.push(...arts);
   });
 
-  // Deduplicate by URL
   const seen = new Set();
   const unique = allArticles.filter(a => {
     if (seen.has(a.link)) return false;
@@ -235,10 +301,8 @@ function buildFeedHtml(visibleIds) {
     return true;
   });
 
-  // Sort newest first
   unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
-  // Group by time period
   const groups = {};
   unique.forEach(article => {
     const group = getTimeGroup(article.pubDate);
@@ -246,7 +310,6 @@ function buildFeedHtml(visibleIds) {
     groups[group].push(article);
   });
 
-  // Render grouped
   let html = '';
   TIME_GROUP_ORDER.forEach(groupName => {
     const articles = groups[groupName];
@@ -258,6 +321,54 @@ function buildFeedHtml(visibleIds) {
   return html;
 }
 
+// ── Video rendering ──
+function renderVideoHtml(video) {
+  const catColor = CATEGORY_COLORS[video._loc.category];
+  const dur = formatDuration(video.duration);
+  const views = formatViews(video.views);
+
+  return `
+    <a class="video-card" href="${video.link}" target="_blank" rel="noopener">
+      <div class="video-card-thumb">
+        <img src="${video.thumb}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+        ${dur ? `<span class="video-card-duration">${dur}</span>` : ''}
+      </div>
+      <div class="video-card-title">${video.title}</div>
+      <div class="video-card-meta">
+        <span class="video-card-channel">${video.channel}</span>
+        ${views ? `<span class="sep"></span><span>${views}</span>` : ''}
+        ${video.published ? `<span class="sep"></span><span>${timeAgo(video.published)}</span>` : ''}
+      </div>
+      <span class="news-article-tag" style="background:${catColor}18;color:${catColor};">
+        <span class="news-article-tag-dot" style="background:${catColor};"></span>
+        ${video._loc.name}
+      </span>
+    </a>
+  `;
+}
+
+function buildVideosFeedHtml(visibleIds) {
+  const allVideos = [];
+  visibleIds.forEach(id => {
+    const vids = videosByLoc.get(id);
+    if (vids) allVideos.push(...vids);
+  });
+
+  // Deduplicate by videoId
+  const seen = new Set();
+  const unique = allVideos.filter(v => {
+    if (seen.has(v.videoId)) return false;
+    seen.add(v.videoId);
+    return true;
+  });
+
+  // Sort newest first
+  unique.sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
+
+  return unique.map(renderVideoHtml).join('');
+}
+
+// ── Unified render ──
 function renderSidebar(forceRefresh) {
   renderGeneration++;
   const gen = renderGeneration;
@@ -274,15 +385,20 @@ function renderSidebar(forceRefresh) {
   const visibleIds = new Set(visible.map(l => l.id));
   const visibleKey = [...visibleIds].sort().join(',');
 
-  // Skip if same set of locations and not forced
   if (!forceRefresh && visibleKey === lastVisibleIds) return;
   lastVisibleIds = visibleKey;
 
-  // Find which locations need fetching (not in articlesByLoc or cache expired)
+  if (activeTab === 'articles') {
+    renderArticlesTab(visible, visibleIds, gen);
+  } else {
+    renderVideosTab(visible, visibleIds, gen);
+  }
+}
+
+function renderArticlesTab(visible, visibleIds, gen) {
   const toFetch = visible.filter(loc => {
     const cached = newsCache.get(loc.searchKeywords);
     if (cached && (Date.now() - cached.fetchedAt) < CACHE_TTL) {
-      // Ensure articlesByLoc is populated from cache
       if (!articlesByLoc.has(loc.id)) {
         articlesByLoc.set(loc.id, cached.articles.map(a => ({ ...a, _loc: loc })));
       }
@@ -291,47 +407,93 @@ function renderSidebar(forceRefresh) {
     return true;
   });
 
-  // If nothing to fetch, render immediately from collected articles
   if (toFetch.length === 0) {
-    const html = buildFeedHtml(visibleIds);
+    const html = buildArticlesFeedHtml(visibleIds);
     sidebarBody.innerHTML = html || `<div class="sidebar-empty">No news found for visible locations.</div>`;
     return;
   }
 
-  // Show existing articles immediately, then fetch new ones
-  const existingHtml = buildFeedHtml(visibleIds);
-  if (existingHtml) {
-    sidebarBody.innerHTML = existingHtml;
-  } else {
-    sidebarBody.innerHTML = `
-      <div class="news-loading" style="justify-content:center;padding:30px 16px;">
-        <div class="news-loading-spinner"></div>
-        Loading news for ${toFetch.length} locations...
-      </div>
-    `;
-  }
+  const existingHtml = buildArticlesFeedHtml(visibleIds);
+  sidebarBody.innerHTML = existingHtml || `
+    <div class="news-loading" style="justify-content:center;padding:30px 16px;">
+      <div class="news-loading-spinner"></div>
+      Loading articles...
+    </div>
+  `;
 
-  // Only fetch locations that actually need it
   let completed = 0;
   toFetch.forEach(loc => {
     fetchNews(loc.searchKeywords)
       .then(articles => {
         articlesByLoc.set(loc.id, articles.map(a => ({ ...a, _loc: loc })));
       })
-      .catch(() => {
-        articlesByLoc.set(loc.id, []);
-      })
+      .catch(() => { articlesByLoc.set(loc.id, []); })
       .finally(() => {
         completed++;
         if (gen !== renderGeneration) return;
-
         if (completed === toFetch.length) {
-          const html = buildFeedHtml(visibleIds);
-          sidebarBody.innerHTML = html || `<div class="sidebar-empty">No news found for visible locations.</div>`;
+          const html = buildArticlesFeedHtml(visibleIds);
+          sidebarBody.innerHTML = html || `<div class="sidebar-empty">No news found.</div>`;
         }
       });
   });
 }
+
+function renderVideosTab(visible, visibleIds, gen) {
+  const toFetch = visible.filter(loc => {
+    const cached = videoCache.get(loc.searchKeywords);
+    if (cached && (Date.now() - cached.fetchedAt) < CACHE_TTL) {
+      if (!videosByLoc.has(loc.id)) {
+        videosByLoc.set(loc.id, cached.videos.map(v => ({ ...v, _loc: loc })));
+      }
+      return false;
+    }
+    return true;
+  });
+
+  if (toFetch.length === 0) {
+    const html = buildVideosFeedHtml(visibleIds);
+    sidebarBody.innerHTML = html || `<div class="sidebar-empty">No videos found for visible locations.</div>`;
+    return;
+  }
+
+  const existingHtml = buildVideosFeedHtml(visibleIds);
+  sidebarBody.innerHTML = existingHtml || `
+    <div class="news-loading" style="justify-content:center;padding:30px 16px;">
+      <div class="news-loading-spinner"></div>
+      Loading videos...
+    </div>
+  `;
+
+  let completed = 0;
+  toFetch.forEach(loc => {
+    fetchVideos(loc.searchKeywords)
+      .then(videos => {
+        videosByLoc.set(loc.id, videos.map(v => ({ ...v, _loc: loc })));
+      })
+      .catch(() => { videosByLoc.set(loc.id, []); })
+      .finally(() => {
+        completed++;
+        if (gen !== renderGeneration) return;
+        if (completed === toFetch.length) {
+          const html = buildVideosFeedHtml(visibleIds);
+          sidebarBody.innerHTML = html || `<div class="sidebar-empty">No videos found.</div>`;
+        }
+      });
+  });
+}
+
+// ── Tab switching ──
+document.querySelectorAll('.sidebar-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (tab.dataset.tab === activeTab) return;
+    activeTab = tab.dataset.tab;
+    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    lastVisibleIds = ''; // force re-render
+    renderSidebar(true);
+  });
+});
 
 // Debounce sidebar updates on map move
 let renderTimeout = null;
