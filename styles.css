@@ -447,6 +447,7 @@ body.day-mode .news-article:hover .news-article-title {
 /* ── Sidebar Drag Zone (mobile only) ── */
 .sidebar-drag-zone {
   flex-shrink: 0;
+  background: var(--bg-surface);
 }
 
 .sidebar-drag-handle {
@@ -482,7 +483,8 @@ body.day-mode .news-article:hover .news-article-title {
 .sidebar {
   width: var(--sidebar-width);
   height: 100%;
-  background: var(--bg-surface);
+  background: var(--bg-deep);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
