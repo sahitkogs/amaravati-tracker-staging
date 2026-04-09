@@ -38,6 +38,7 @@ const themeToggle = document.getElementById('themeToggle');
 themeToggle.addEventListener('click', () => {
   isDay = !isDay;
   themeToggle.classList.toggle('day', isDay);
+  document.body.classList.toggle('day-mode', isDay);
   // If currently on satellite, don't switch — just remember preference
   if (currentTileLayer !== 'satellite') {
     switchTileLayer(isDay ? 'day' : 'night');

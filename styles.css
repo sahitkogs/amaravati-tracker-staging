@@ -37,6 +37,48 @@ body {
   overflow: hidden;
 }
 
+/* ── Light / Day Mode ── */
+body.day-mode {
+  --bg-deep: #f0ede8;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f5f3ef;
+  --bg-hover: #eae7e1;
+  --border: #ddd8d0;
+  --border-light: #ccc7be;
+  --text-primary: #1a1a1a;
+  --text-secondary: #5a564f;
+  --text-muted: #9a958d;
+  --accent-gold: #a07820;
+  --accent-gold-dim: #8a6818;
+  --accent-gold-glow: rgba(160, 120, 32, 0.12);
+}
+
+body.day-mode .leaflet-control-zoom a {
+  background: #fff !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+
+body.day-mode .leaflet-control-zoom a:hover {
+  background: #f0f0f0 !important;
+  color: #000 !important;
+}
+
+body.day-mode .home-btn {
+  background: #fff;
+  border-color: rgba(0,0,0,0.15);
+  color: #555;
+}
+
+body.day-mode .home-btn:hover {
+  background: #f0f0f0;
+  color: #222;
+}
+
+body.day-mode .news-article:hover .news-article-title {
+  color: #1a5fb4;
+}
+
 /* ── Top Bar ── */
 .topbar {
   position: fixed;
