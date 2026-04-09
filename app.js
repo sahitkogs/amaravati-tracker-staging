@@ -24,19 +24,38 @@ const tileLayers = {
 
 tileLayers.night.addTo(map);
 let currentTileLayer = 'night';
+let isDay = false;
 
-document.querySelectorAll('.layer-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const layer = btn.dataset.layer;
-    if (layer === currentTileLayer) return;
+function switchTileLayer(layer) {
+  if (layer === currentTileLayer) return;
+  map.removeLayer(tileLayers[currentTileLayer]);
+  tileLayers[layer].addTo(map);
+  currentTileLayer = layer;
+}
 
-    map.removeLayer(tileLayers[currentTileLayer]);
-    tileLayers[layer].addTo(map);
-    currentTileLayer = layer;
+// Day/Night toggle
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('click', () => {
+  isDay = !isDay;
+  themeToggle.classList.toggle('day', isDay);
+  // If currently on satellite, don't switch — just remember preference
+  if (currentTileLayer !== 'satellite') {
+    switchTileLayer(isDay ? 'day' : 'night');
+  }
+  // Deactivate satellite button when switching theme
+  document.querySelector('[data-layer="satellite"]').classList.remove('active');
+});
 
-    document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
+// Satellite toggle
+document.querySelector('[data-layer="satellite"]').addEventListener('click', function () {
+  if (currentTileLayer === 'satellite') {
+    // Toggle off satellite — go back to day/night
+    switchTileLayer(isDay ? 'day' : 'night');
+    this.classList.remove('active');
+  } else {
+    switchTileLayer('satellite');
+    this.classList.add('active');
+  }
 });
 
 // ══════════════════════════════════════════════════════════

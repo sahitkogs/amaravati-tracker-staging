@@ -262,6 +262,47 @@ body {
 .layer-btn:hover { color: var(--text-secondary); border-color: var(--border-light); }
 .layer-btn.active { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-light); }
 
+/* ── Day/Night Toggle ── */
+.theme-toggle {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 1rem;
+}
+
+.theme-icon {
+  position: absolute;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+/* Night mode (default): moon visible, sun hidden */
+.theme-icon.moon {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+.theme-icon.sun {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+}
+
+/* Day mode: sun visible, moon hidden */
+.theme-toggle.day .theme-icon.moon {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+}
+
+.theme-toggle.day .theme-icon.sun {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  color: var(--accent-gold);
+}
+
 /* ── Layout: Map + Sidebar ── */
 .main-layout {
   position: fixed;
