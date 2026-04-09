@@ -50,7 +50,6 @@ index.html          — HTML skeleton, loads all dependencies
 styles.css          — All CSS (layout, sidebar, markers, responsive)
 data.js             — Location data array + config constants
 app.js              — Map init, markers, news fetching, sidebar rendering, filters
-deliverable/        — Single-file build for distribution
 plans/              — Implementation plan docs
 tests/images/       — Playwright test screenshots
 ```
@@ -80,7 +79,7 @@ Tip: search your `searchKeywords` on [Google News](https://news.google.com) firs
 
 The site is hosted on GitHub Pages. Any push to `main` triggers a rebuild.
 
-The `deliverable/` folder contains a single merged HTML file for sharing, but note that news fetching requires HTTP hosting — it won't work when opened directly from `file://`.
+News fetching requires HTTP hosting — it won't work when opened directly from `file://`.
 
 ## License
 
