@@ -161,7 +161,7 @@ function parseRssXml(xmlText) {
   const articles = [];
 
   items.forEach((item, i) => {
-    if (i >= 5) return;
+    if (i >= 8) return;
 
     const title = item.querySelector('title')?.textContent || '';
     const link = item.querySelector('link')?.textContent || '';
@@ -216,7 +216,7 @@ const INVIDIOUS_INSTANCES = [
 function parseVideoResults(data) {
   return data
     .filter(item => item.type === 'video')
-    .slice(0, 6)
+    .slice(0, 10)
     .map(v => ({
       title: v.title,
       videoId: v.videoId,

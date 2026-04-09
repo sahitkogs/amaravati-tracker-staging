@@ -740,7 +740,6 @@ body.day-mode .news-article:hover .news-article-title {
 /* ── Article border ── */
 .news-article {
   border-bottom: 1px solid var(--border);
-  background: var(--bg-surface);
 }
 
 .news-article:last-child {
@@ -753,7 +752,6 @@ body.day-mode .news-article:hover .news-article-title {
   flex-wrap: wrap;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--bg-surface);
 }
 
 .video-card {
