@@ -102,9 +102,21 @@ LOCATIONS.forEach(loc => {
   });
 
   marker.on('click', () => {
+    selectedLocation = loc;
+    lastVisibleIds = ''; // force re-render
+    renderSidebar(true);
     map.setView([loc.lat, loc.lng], Math.max(map.getZoom(), 14), { animate: true });
   });
   loc._marker = marker;
+});
+
+// Clear selection when popup closes
+map.on('popupclose', () => {
+  if (selectedLocation) {
+    selectedLocation = null;
+    lastVisibleIds = '';
+    renderSidebar(true);
+  }
 });
 
 // ══════════════════════════════════════════════════════════
@@ -285,9 +297,13 @@ let activeFilter = 'all';
 let activeTab = 'articles';
 let renderGeneration = 0;
 let lastVisibleIds = '';
+let selectedLocation = null;
 const articlesByLoc = new Map();
 
 function getVisibleLocations() {
+  // If a point is selected, return only that location
+  if (selectedLocation) return [selectedLocation];
+
   const bounds = map.getBounds();
   return LOCATIONS.filter(loc => {
     if (activeFilter !== 'all' && loc.category !== activeFilter) return false;
