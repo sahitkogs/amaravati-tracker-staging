@@ -283,7 +283,6 @@ body {
   height: 100%;
 }
 
-.leaflet-tile-pane.satellite { filter: none; }
 .leaflet-control-attribution { font-size: 9px !important; opacity: 0.5; }
 .leaflet-control-zoom a {
   background: var(--bg-surface) !important;
@@ -530,7 +529,10 @@ body {
   .topbar-subtitle { display: none; }
   .topbar-divider:first-of-type { display: none; }
   .topbar-divider:nth-of-type(2) { display: none; }
-  .layer-toggle { display: none; }
+
+  .layer-toggle {
+    margin-left: auto;
+  }
 
   /* Hide pill filters, show dropdown */
   .filters { display: none; }

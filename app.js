@@ -8,34 +8,34 @@ const map = L.map('map', {
   attributionControl: true
 });
 
-const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-  maxZoom: 20, subdomains: 'abcd'
-});
+const tileLayers = {
+  night: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 20, subdomains: 'abcd'
+  }),
+  day: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 20, subdomains: 'abcd'
+  }),
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; Esri', maxZoom: 19
+  })
+};
 
-const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: '&copy; Esri', maxZoom: 19
-});
-
-streetLayer.addTo(map);
-let currentTileLayer = 'street';
+tileLayers.night.addTo(map);
+let currentTileLayer = 'night';
 
 document.querySelectorAll('.layer-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const layer = btn.dataset.layer;
     if (layer === currentTileLayer) return;
+
+    map.removeLayer(tileLayers[currentTileLayer]);
+    tileLayers[layer].addTo(map);
     currentTileLayer = layer;
+
     document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    if (layer === 'satellite') {
-      map.removeLayer(streetLayer);
-      satelliteLayer.addTo(map);
-      document.querySelector('.leaflet-tile-pane').classList.add('satellite');
-    } else {
-      map.removeLayer(satelliteLayer);
-      streetLayer.addTo(map);
-      document.querySelector('.leaflet-tile-pane').classList.remove('satellite');
-    }
   });
 });
 
