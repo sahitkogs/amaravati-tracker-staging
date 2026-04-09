@@ -23,7 +23,7 @@
   --status-construction: #e0943a;
   --status-planned: #4a9eda;
   --status-stalled: #e05555;
-  --sidebar-width: 700px;
+  --sidebar-width: 380px;
   --topbar-height: 56px;
   --radius: 8px;
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -465,18 +465,35 @@ body.day-mode .news-article:hover .news-article-title {
 
 /* ── Sidebar Horizontal Resize (desktop) ── */
 .sidebar-resize-handle {
-  width: 5px;
+  width: 8px;
   cursor: col-resize;
-  background: transparent;
+  background: var(--border);
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--border-light);
   transition: background 0.2s;
 }
 
 .sidebar-resize-handle:hover,
 .sidebar-resize-handle.dragging {
-  background: var(--accent-gold-dim);
+  background: var(--accent-gold-glow);
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle.dragging::after {
+  background: var(--accent-gold);
 }
 
 /* ── Sidebar (always visible) ── */
@@ -581,13 +598,14 @@ body.day-mode .news-article:hover .news-article-title {
 
 /* ── Time Group Header ── */
 .time-group-header {
-  padding: 10px 16px 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
+  padding: 12px 16px 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+  border-top: 1px solid var(--border);
   position: sticky;
   top: 0;
   background: var(--bg-surface);
@@ -729,14 +747,16 @@ body.day-mode .news-article:hover .news-article-title {
 
 /* ── YouTube Video Grid ── */
 .video-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 12px 16px;
   background: var(--bg-surface);
 }
 
 .video-card {
+  width: 220px;
+  flex-shrink: 0;
   display: block;
   text-decoration: none;
   color: inherit;
@@ -869,8 +889,11 @@ body.day-mode .news-article:hover .news-article-title {
   }
 
   .video-grid {
-    grid-template-columns: 1fr;
     gap: 8px;
     padding: 8px 12px;
+  }
+
+  .video-card {
+    width: 100%;
   }
 }

@@ -103,7 +103,8 @@ LOCATIONS.forEach(loc => {
 
   marker.on('click', () => {
     selectedLocation = loc;
-    lastVisibleIds = ''; // force re-render
+    lastVisibleIdsByTab.articles = '';
+    lastVisibleIdsByTab.videos = '';
     renderSidebar(true);
     map.setView([loc.lat, loc.lng], Math.max(map.getZoom(), 14), { animate: true });
   });
@@ -114,7 +115,8 @@ LOCATIONS.forEach(loc => {
 map.on('popupclose', () => {
   if (selectedLocation) {
     selectedLocation = null;
-    lastVisibleIds = '';
+    lastVisibleIdsByTab.articles = '';
+    lastVisibleIdsByTab.videos = '';
     renderSidebar(true);
   }
 });
@@ -122,9 +124,30 @@ map.on('popupclose', () => {
 // ══════════════════════════════════════════════════════════
 //  NEWS FETCHING — Google News RSS via CORS proxy
 // ══════════════════════════════════════════════════════════
-const newsCache = new Map();
 const CACHE_TTL = 10 * 60 * 1000;
 const PROXY_BASE = 'https://corsproxy.io/?';
+
+// ── Persistent cache via sessionStorage ──
+function loadCache(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return new Map();
+    const entries = JSON.parse(raw);
+    const map = new Map();
+    entries.forEach(([k, v]) => {
+      if (Date.now() - v.fetchedAt < CACHE_TTL) map.set(k, v);
+    });
+    return map;
+  } catch { return new Map(); }
+}
+
+function saveCache(key, map) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify([...map.entries()]));
+  } catch {}
+}
+
+const newsCache = loadCache('newsCache');
 
 function buildProxiedRssUrl(keywords) {
   const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(keywords)}&hl=en-IN&gl=IN&ceid=IN:en`;
@@ -174,13 +197,14 @@ async function fetchNews(keywords) {
   const articles = parseRssXml(xmlText);
 
   newsCache.set(keywords, { articles, fetchedAt: Date.now() });
+  saveCache('newsCache', newsCache);
   return articles;
 }
 
 // ══════════════════════════════════════════════════════════
 //  YOUTUBE FETCHING — via Invidious API
 // ══════════════════════════════════════════════════════════
-const videoCache = new Map();
+const videoCache = loadCache('videoCache');
 const videosByLoc = new Map();
 const INVIDIOUS_INSTANCES = [
   'https://vid.puffyan.us',
@@ -228,6 +252,7 @@ async function fetchVideos(keywords) {
         const videos = parseVideoResults(data);
         if (videos.length > 0) {
           videoCache.set(keywords, { videos, fetchedAt: Date.now() });
+          saveCache('videoCache', videoCache);
           return videos;
         }
       } catch (e) {
@@ -237,6 +262,7 @@ async function fetchVideos(keywords) {
   }
 
   videoCache.set(keywords, { videos: [], fetchedAt: Date.now() });
+  saveCache('videoCache', videoCache);
   return [];
 }
 
@@ -296,7 +322,7 @@ const visibleCountEl = document.getElementById('visibleCount');
 let activeFilter = 'all';
 let activeTab = 'articles';
 let renderGeneration = 0;
-let lastVisibleIds = '';
+const lastVisibleIdsByTab = { articles: '', videos: '' };
 let selectedLocation = null;
 const articlesByLoc = new Map();
 
@@ -444,7 +470,8 @@ function renderSidebar(forceRefresh) {
   visibleCountEl.textContent = visible.length;
 
   if (visible.length === 0) {
-    lastVisibleIds = '';
+    lastVisibleIdsByTab.articles = '';
+    lastVisibleIdsByTab.videos = '';
     sidebarBody.innerHTML = `<div class="sidebar-empty">No locations in the current view.<br>Zoom out or pan the map to see locations.</div>`;
     return;
   }
@@ -452,8 +479,8 @@ function renderSidebar(forceRefresh) {
   const visibleIds = new Set(visible.map(l => l.id));
   const visibleKey = [...visibleIds].sort().join(',');
 
-  if (!forceRefresh && visibleKey === lastVisibleIds) return;
-  lastVisibleIds = visibleKey;
+  if (!forceRefresh && visibleKey === lastVisibleIdsByTab[activeTab]) return;
+  lastVisibleIdsByTab[activeTab] = visibleKey;
 
   if (activeTab === 'articles') {
     renderArticlesTab(visible, visibleIds, gen);
@@ -557,7 +584,7 @@ document.querySelectorAll('.sidebar-tab').forEach(tab => {
     activeTab = tab.dataset.tab;
     document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    lastVisibleIds = ''; // force re-render
+    // Don't reset — let the tab's own lastVisibleIds decide if re-render is needed
     renderSidebar(true);
   });
 });
