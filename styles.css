@@ -500,7 +500,7 @@ body.day-mode .news-article:hover .news-article-title {
 .sidebar {
   width: var(--sidebar-width);
   height: 100%;
-  background: var(--bg-deep);
+  background: var(--bg-surface);
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -585,7 +585,6 @@ body.day-mode .news-article:hover .news-article-title {
   padding: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-  background: var(--bg-deep);
 }
 
 .sidebar-empty {
