@@ -22,8 +22,8 @@ const tileLayers = {
   })
 };
 
-tileLayers.night.addTo(map);
-let currentTileLayer = 'night';
+tileLayers.satellite.addTo(map);
+let currentTileLayer = 'satellite';
 let isDay = false;
 
 function switchTileLayer(layer) {

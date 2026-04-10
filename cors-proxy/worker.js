@@ -51,7 +51,11 @@ async function handleYouTubeSearch(url, origin, env) {
   const cacheKey = new Request(`https://yt-cache/${q}/${maxResults}`, { method: 'GET' });
   const cache = caches.default;
   let cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    const resp = new Response(cached.body, cached);
+    resp.headers.set('X-Cache', 'HIT');
+    return resp;
+  }
 
   // Search YouTube
   const searchUrl = `${YT_API_BASE}/search?part=snippet&q=${encodeURIComponent(q)}&type=video&order=date&regionCode=IN&maxResults=${maxResults}&key=${env.YOUTUBE_API_KEY}`;
@@ -98,9 +102,11 @@ async function handleYouTubeSearch(url, origin, env) {
   });
 
   const response = jsonResponse(videos, origin, 200, YT_CACHE_TTL);
+  response.headers.set('X-Cache', 'MISS');
 
-  // Store in edge cache
+  // Store in edge cache (without X-Cache header so cached copy is clean)
   const cacheResp = response.clone();
+  cacheResp.headers.delete('X-Cache');
   await cache.put(cacheKey, cacheResp);
 
   return response;
@@ -116,7 +122,11 @@ async function handleNewsSearch(url, origin) {
   const cacheKey = new Request(`https://news-cache/${q}/${maxResults}`, { method: 'GET' });
   const cache = caches.default;
   const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    const resp = new Response(cached.body, cached);
+    resp.headers.set('X-Cache', 'HIT');
+    return resp;
+  }
 
   // Fetch Google News RSS
   const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
@@ -151,8 +161,10 @@ async function handleNewsSearch(url, origin) {
   }
 
   const response = jsonResponse(articles, origin, 200, NEWS_CACHE_TTL);
+  response.headers.set('X-Cache', 'MISS');
 
   const cacheResp = response.clone();
+  cacheResp.headers.delete('X-Cache');
   await cache.put(cacheKey, cacheResp);
 
   return response;
