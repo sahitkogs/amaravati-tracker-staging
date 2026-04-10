@@ -95,6 +95,12 @@ LOCATIONS.forEach(loc => {
     </div>
   `;
 
+  marker.bindTooltip(loc.name, {
+    direction: 'top',
+    offset: [0, -8],
+    className: 'marker-tooltip'
+  });
+
   marker.bindPopup(popupContent, {
     className: 'custom-popup',
     maxWidth: 260,
